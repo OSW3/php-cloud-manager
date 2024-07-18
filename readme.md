@@ -1,4 +1,4 @@
-# URL Manager
+# Cloud Manager
 
 Provides cloud connection and file manipulation tools.
 
