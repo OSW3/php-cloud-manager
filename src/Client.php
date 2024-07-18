@@ -2,10 +2,8 @@
 
 namespace OSW3\CloudManager;
 
+use OSW3\CloudManager\Drivers\DropboxDriver;
 use OSW3\CloudManager\Drivers\FtpDriver;
-use OSW3\CloudManager\Drivers\FtpsDriver;
-use OSW3\CloudManager\Drivers\SftpDriver;
-use OSW3\CloudManager\Drivers\SshDriver;
 use OSW3\CloudManager\Helper\Driver;
 use OSW3\CloudManager\Services\DsnService;
 
@@ -77,10 +75,11 @@ class Client
     public function connect(bool $authenticate=true)
     {
         $driverClass = match ($this->dsn()->getDriver()) {
+            Driver::DROPBOX  => DropboxDriver::class,
             Driver::FTP  => FtpDriver::class,
-            Driver::FTPS => FtpsDriver::class,
-            Driver::SFTP => SftpDriver::class,
-            Driver::SSH  => SshDriver::class,
+            // Driver::FTPS => FtpsDriver::class,
+            // Driver::SFTP => SftpDriver::class,
+            // Driver::SSH  => SshDriver::class,
         };
 
         $this->driver = new $driverClass($this->dsn()->get(true));
