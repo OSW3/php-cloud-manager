@@ -1,0 +1,23 @@
+{
+    "name": "osw3/php-cloud-manager",
+    "description": "Provides cloud connection and file manipulation tools.",
+    "homepage": "https://osw3.net",
+    "type": "library",
+    "license": "MIT",
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "authors": [
+		{
+			"name": "Project Contributors",
+			"homepage": "https://github.com/osw3/php-cloud-manager/graphs/contributors"
+		}
+    ],
+    "autoload": {
+        "psr-4": {
+            "OSW3\\CloudManager\\": "src/"
+        }
+    },
+    "require": {
+        "osw3/php-url-manager": "*"
+    }
+}
