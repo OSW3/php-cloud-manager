@@ -79,20 +79,6 @@ abstract class AbstractDriver
         return !!$this->connection;
     }
 
-    // Pointer location & navigation
-    // --
-
-
-    // Entry infos
-    // --
-
-
-
-
-
-
-
-
     // Local Directories Settings
     // --
 
@@ -128,6 +114,8 @@ abstract class AbstractDriver
         return $this;
     }
 
+
+    
     protected function scandir(string $directory, array $entries=[]): array
     {
         if (preg_match("/\/$/", $directory))

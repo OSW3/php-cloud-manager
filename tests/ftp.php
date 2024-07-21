@@ -154,7 +154,7 @@ print_r("Location : {$client->location()} \n\n");
 // ----------------------------------
 // $client->download( "/www/my-dir-1/", "/Users/arnaud/Downloads/my-dir-1/", true );
 // $client->download( "/www/my-dir-1/unicorn.jpg", "/Users/arnaud/Downloads/UNICORN.jpg" );
-$client->download( "/www/my-dir-1/dir-copy/unicorn.jpg", "/Users/arnaud/Downloads/UNICORN.jpg" );
+// $client->download( "/www/my-dir-1/dir-copy/unicorn.jpg", "/Users/arnaud/Downloads/UNICORN.jpg" );
 
 
 
@@ -207,45 +207,26 @@ $client->download( "/www/my-dir-1/dir-copy/unicorn.jpg", "/Users/arnaud/Download
 // print_r("Is File (/www/test.txt) : ". ($client->isFile("/www/test.txt") ? "yes" : "no") . " \n\n");
 
 
-
-
-
-
-
-
-
-
-
-
-
-// print_r("Create File (/www/test.txt) : {$client->createFile("/www/test.txt")}\n\n");
-// print_r("Create File (/www/plop.txt) : {$client->createFile("/www/plop.txt")}\n\n");
-
-
-
 // Magic Methods
-// --
+// ----------------------------------
 
 // print_r($client->directory("/www")->list);
+
 // print_r($client->directory("/www")->permissions);
-// print_r($client->directory("/www")->nodes);
-// print_r($client->directory("/www")->owner);
-// print_r($client->directory("/www")->group);
-// print_r($client->directory("/www")->infos);
-// print_r($client->browse("/www"));
-
-
 // print_r($client->file("/www/test.txt")->permissions);
+
+// print_r($client->directory("/www")->nodes);
+
 // print_r($client->file("/www/test.txt")->size);
+
+// print_r($client->directory("/www")->owner);
 // print_r($client->file("/www/test.txt")->owner);
+
+// print_r($client->directory("/www")->group);
 // print_r($client->file("/www/test.txt")->group);
+
+// print_r($client->directory("/www")->infos);
 // print_r($client->file("/www/test.txt")->infos);
-
-
-
-
-
-
 
 
 
@@ -255,63 +236,7 @@ $client->download( "/www/my-dir-1/dir-copy/unicorn.jpg", "/Users/arnaud/Download
 // --
 
 // Set the local temp dir
-// $client->setLocalTempDirectory("./../temp/ftp/temp-test/");
+// $client->setTempDirectory("./../temp/ftp/temp-test/");
 
-// Set the local root dir
-// $client->setLocalDirectory("./../temp/ftp/temp-test/");
-
-
-
-
-
-
-
-
-
-
-// File Type
-// --
-
-// print_r("Navigate to (/www/my-dir-1/my-dir-2) : {$client->navigateTo("/www/my-dir-1/my-dir-2")} \n\n");
-// print_r("Location : {$client->location()} \n\n");
-
-// print_r("Create Directory (my-dir-3) : {$client->createFolder("my-dir-3")} \n\n");
-// print_r("Location : {$client->location()} \n\n");
-
-// print_r("Create Directory (my-dir-4) : {$client->createFolder(directory: "my-dir-4", navigateTo: false)} \n\n");
-// print_r("Location : {$client->location()} \n\n");
-
-
-
-// File Infos
-// --
-
-// $file = "/www/my-dir-1-99/test.txt";
-// print_r("Delete File ({$file}) : ". ($client->deleteFile($file) ? "yes" : "no") ."\n\n");
-// print_r($client->createFile($file, "test"));
-// print_r($client->copyFile("/www/no_media.jpg", "/www/my-dir-3/no_media.jpg"));
-// print_r($client->copy("/www/no_media.jpg", "/www/my-dir-3/no_media.jpg"));
-// print_r($client->delete("/www/my-dir-3"));
-// print_r($client->copy("/www/plop", "/www/my-dir-3/plop"));
-
-// print_r("Delete (/www/my-dir-3) : ". ($client->deleteFolder("www/my-dir-3", true) ? "yes" : "no") ."\n\n");
-
-
-
-
-// $client->createFolder("/www/my-dir-1");
-// $client->createFolder("/www/my-dir-2");
-// $client->duplicateFile("/unicorn.jpg", "/www/my-dir-1/unicorn.jpg");
-
-// print_r("move File : ". ($client->move("/www/my-dir-1/unicorn.jpg",  "/www/my-dir-2/unicorn.jpg") ? "yes" : "no") ."\n\n");
-// print_r("move directory : ". ($client->move("/www/my-dir-2",  "/www/my-dir-1/my-dir-2") ? "yes" : "no") ."\n\n");
-// print_r("Move directory : ". ($client->move("/www/my-dir-3",  "/www/my-dir-1") ? "yes" : "no") ."\n\n");
-// print_r("Rename directory : ". ($client->rename("/www/my-dir-1-a",  "/www/my-dir-1") ? "yes" : "no") ."\n\n");
-
-
-// $client->send( __DIR__."/data.json", "/www/my-dir-1/data-copy.json", false );
-// $client->send( __DIR__."/../temp", "/www/my-dir-1/" );
-// $client->get( "/www/my-dir-1/", "/Users/arnaud/Downloads/my-dir-1/", true );
-// $client->get( "/www/my-dir-1/unicorn.jpg", "/Users/arnaud/Downloads/UNICORN.jpg" );
-
-print_r("\n\n");
+// Get the local root dir
+// print_r($client->getTempDirectory());

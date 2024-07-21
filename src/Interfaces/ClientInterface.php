@@ -34,7 +34,7 @@ interface ClientInterface
     public function disconnect(): bool;
 
     /**
-     * return true when the driver is connected
+     * return `true` when the driver is connected
      *
      * @return boolean
      */
@@ -52,22 +52,22 @@ interface ClientInterface
     public function location(): ?string;
 
     /**
-     * Navigate to a specific directory
+     * Set the pointer to a specific folder.
      *
-     * @param string $directory
+     * @param string $folder
      * @return boolean
      */
-    public function navigateTo(string $directory): bool;
+    public function navigateTo(string $folder): bool;
 
     /**
-     * Navigate to parent directory
+     * Set the pointer to a parent folder.
      *
      * @return boolean
      */
     public function parent(): bool;
 
     /**
-     * Navigate to the driver root
+     * Set the pointer to the root of the driver.
      *
      * @return boolean
      */
@@ -114,7 +114,7 @@ interface ClientInterface
     public function getPermission(string $path): string;
 
     /**
-     * True if $path is a directory type
+     * True if $path is a folder type
      *
      * @param string $path
      * @return boolean
@@ -130,15 +130,15 @@ interface ClientInterface
     public function isDirectory(string $path): bool;
 
     /**
-     * True if ^filename is a file type
+     * True if $path is a file type
      *
-     * @param string $filename
+     * @param string $path
      * @return boolean
      */
     public function isFile(string $path): bool;
 
     /**
-     * True if ^path is a link type
+     * True if $path is a link type
      *
      * @param string $path
      * @return boolean
@@ -146,7 +146,7 @@ interface ClientInterface
     public function isLink(string $path): bool;
 
     /**
-     * True if ^path is a block type
+     * True if $path is a block type
      *
      * @param string $path
      * @return boolean
@@ -154,7 +154,7 @@ interface ClientInterface
     public function isBlock(string $path): bool;
 
     /**
-     * True if ^path is a character type
+     * True if $path is a character type
      *
      * @param string $path
      * @return boolean
@@ -162,7 +162,7 @@ interface ClientInterface
     public function isCharacter(string $path): bool;
 
     /**
-     * True if ^path is a socket type
+     * True if $path is a socket type
      *
      * @param string $path
      * @return boolean
@@ -170,7 +170,7 @@ interface ClientInterface
     public function isSocket(string $path): bool;
 
     /**
-     * True if ^path is a pipe type
+     * True if $path is a pipe type
      *
      * @param string $path
      * @return boolean

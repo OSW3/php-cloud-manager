@@ -249,17 +249,15 @@ class Client implements ClientInterface
     // Local Directories Settings
     // --
 
-    public function setLocalDirectory(string $directory): static
+    public function setTempDirectory(string $directory): static
     {
-        $this->driver->setLocalDirectory($directory);
+        $this->driver->setTempDirectory($directory);
         
         return $this;
     }
-    public function setLocalTempDirectory(string $directory): static
+    public function getTempDirectory(): string
     {
-        $this->driver->setLocalTempDirectory($directory);
-        
-        return $this;
+        return $this->driver->getTempDirectory();
     }
 
     
@@ -286,7 +284,7 @@ class Client implements ClientInterface
 
         if ($this->_directory !== null && $this->isDirectory($this->_directory)) $output = match($property) 
         {
-            'list' => $this->driver->getContent($this->_directory),
+            'list' => $this->driver->browse($this->_directory),
             'permissions' => $this->driver->permissions($this->_directory),
             'nodes' => $this->driver->infos($this->_directory, 'nodes'),
             'owner' => $this->driver->infos($this->_directory, 'owner'),
@@ -310,5 +308,4 @@ class Client implements ClientInterface
 
         return $output;
     }
-
 }

@@ -10,31 +10,20 @@ composer require osw3/php-cloud-manager
 
 ## Supported services
 
-- FTP
-- *forthcoming* ~~FTPS~~
-- *forthcoming* ~~SFTP~~
-- *forthcoming* ~~SSH~~
-- *forthcoming* ~~Google Drive~~
-- *forthcoming* ~~Dropbox~~
-- *forthcoming* ~~pCloud~~
-- *forthcoming* ~~Mega~~
+- [Dropbox](documentation/Dropbox.md)
+- [FTP](documentation/FTP.md)
 
 ## How to use
 
 ### Create new connection
 
-#### Prepare DSN
+#### Prepare the DSN 
 
 ```php 
-$driver = "ftp";
-$user   = "username";
-$pass   = "password";
-$host   = "site.com";
-$dsn    = "{$driver}://{$user}:{$pass}@{$host}";
+$dsn = "{$driver}://{$user}:{$pass}@{$host}";
 ```
 
-#### Connection : Method 1
-
+####  Client instance
 ```php
 use OSW3\CloudManager\Client;
 $client = new Client($dsn);
@@ -43,41 +32,18 @@ $client = new Client($dsn);
 ##### Don't auto connect
 
 ```php 
-$auto_connect = false;
-$auto_auth    = false;
-$client       = new Client($dsn, $auto_connect);
-
-$client->connect($auto_auth);
-```
-
-##### Don't auto authenticate
-
-```php 
-$auto_connect = true;
-$auto_auth    = false;
-$client       = new Client($dsn, $auto_connect, $auto_auth);
-
-$client->authenticate();
-```
-
-#### Connection : Method 2
-
-```php 
-$client = new Client();
-$client->dsn()->setDriver($driver);
-$client->dsn()->setHost($host);
-$client->dsn()->setUser($user);
-$client->dsn()->setPass($pass);
-
-$client->connect(true);
+$client = new Client($dsn, false);
+$client->connect();
 ```
 
 ### DSN Infos
 
-- `hasDsn(): bool`
+- `dsn(): DsnService`
+    
+    Bridge to DsnService.
 
     ```php
-    $client->hasDsn();
+    $client->dsn()->getDriver(); // ftp
     ```
 
 - `getDriver(): ?string`
@@ -104,6 +70,20 @@ $client->connect(true);
     $client->dsn()->getPass(); // pass
     ```
 
+- `getAuth(): ?int`
+
+    Get the Auth mode
+
+    ```php
+    $client->dsn()->getAuth();
+    ```
+
+- `getToken(): ?int`
+
+    ```php
+    $client->dsn()->getToken();
+    ```
+
 - `getPort(): ?int`
 
     ```php
@@ -112,67 +92,77 @@ $client->connect(true);
 
 - `get(): ?string`
 
+    Get the DSN string
+
     ```php
     $client->dsn()->get(); // ftp://user:pass@site.com";
     ```
 
-### Connection status
+### Driver Statement
 
-- `getConnection(): resource`
+- `connect(): bool`
 
-    return connection resource (e.g.: `\FTP\Connection` for FTP Driver)
+    Proceed to driver connection and return the connection state
 
     ```php
-    $client->getConnection();
+    $client->connect();
+    ```
+
+- `disconnect(): bool`
+
+    Proceed to disconnection and return the connection status
+
+    ```php
+    $client->disconnect();
     ```
 
 - `isConnected(): bool`
 
-    return `true` if the host is connected.
+    return `true` when the driver is connected
 
     ```php
     $client->isConnected();
     ```
 
-- `hasCredential(): bool`
-
-    return `true` if the user is authenticated.
-
-    ```php
-    $client->hasCredential();
-    ```
-
 ### Temp directory
 
-- `setLocalTempDirectory(string $directory): static`
+- `setTempDirectory(string $directory): static`
 
     Set the local server Temp directory for file manipulation.
 
     ```php
-    $client->setLocalTempDirectory("my/temp/dir");
+    $client->setTempDirectory("my/temp/dir");
+    ```
+
+- `getTempDirectory(): string`
+
+    Get the local server Temp directory for file manipulation.
+
+    ```php
+    $client->getTempDirectory();
     ```
 
 ### Navigation
 
 - `location(): string`
 
-    return the pointer location.
+    Return the current location (like PWD)
 
     ```php
     $client->location();
     ```
 
-- `navigateTo(string $directory): bool`
+- `navigateTo(string $folder): bool`
 
-    Set the pointer to a directory.
+    Set the pointer to a specific folder.
 
     ```php
-    $client->location("/www");
+    $client->navigateTo("/www");
     ```
 
 - `parent(): bool`
 
-    Set the pointer to a parent directory.
+    Set the pointer to a parent folder.
 
     ```php
     $client->parent();
@@ -180,17 +170,35 @@ $client->connect(true);
 
 - `root(): bool`
 
-    Set the pointer to the root.
+    Set the pointer to the root of the driver.
 
     ```php
     $client->root();
     ```
 
-### Directories and files infos
+### Entry infos
+
+- `infos(?string $path=null, ?string $part=null): array|string`
+
+    Retrieve the entry infos. 
+    Return an array if $part is null.
+
+    ```php
+    $client->infos("/www/my-dir"); // [...]
+    $client->infos("/www/my-dir", "type"); // folder
+    ```
+
+- `isFolder(string $path): bool`
+
+    True if $path is a folder type.
+
+    ```php
+    $client->isFolder("/www/my-dir");
+    ```
 
 - `isDirectory(string $path): bool`
 
-    return `true` if the `$path` is a directory.
+    An alias of isFolder
 
     ```php
     $client->isDirectory("/www/my-dir");
@@ -198,7 +206,7 @@ $client->connect(true);
 
 - `isFile(string $path): bool`
 
-    return `true` if the `$path` is a file.
+    True if $path is a file type.
 
     ```php
     $client->isFile("/www/my-dir");
@@ -206,7 +214,7 @@ $client->connect(true);
 
 - `isLink(string $path): bool`
 
-    return `true` if the `$path` is a link.
+    True if $path is a link type.
 
     ```php
     $client->isLink("/www/my-dir");
@@ -214,7 +222,7 @@ $client->connect(true);
 
 - `isBlock(string $path): bool`
 
-    return `true` if the `$path` is a block.
+    True if $path is a block type
 
     ```php
     $client->isBlock("/www/my-dir");
@@ -222,7 +230,7 @@ $client->connect(true);
 
 - `isCharacter(string $path): bool`
 
-    return `true` if the `$path` is a character.
+    True if $path is a character type.
 
     ```php
     $client->isCharacter("/www/my-dir");
@@ -230,7 +238,7 @@ $client->connect(true);
 
 - `isSocket(string $path): bool`
 
-    return `true` if the `$path` is a socket.
+    True if $path is a socket type.
 
     ```php
     $client->isSocket("/www/my-dir");
@@ -238,22 +246,24 @@ $client->connect(true);
 
 - `isPipe(string $path): bool`
 
-    return `true` if the `$path` is a Pipe.
+    True if $path is a pipe type.
 
     ```php
     $client->isPipe("/www/my-dir");
     ```
 
-- `infos(?string $path=null, ?string $part=null): array|string`
+### Permissions
 
-    return some infos about the $path.
+- `permissions(string $path, ?int $code=null): string|bool`
+
+    Permissions getter and setter.
+    Set permission to path if `$code` is not `null`.
+    Get permission code if `$code` is `null`
 
     ```php
-    $client->infos("/www/my-dir"); // [...]
-    $client->infos("/www/my-dir", "type"); // directory
+    $client->permissions("/www/my-dir", 0777); // true
+    $client->permissions("/www/my-dir"); // 0777
     ```
-
-### Permissions
 
 - `setPermission(string $path, int $code): bool`
 
@@ -271,18 +281,7 @@ $client->connect(true);
     $client->getPermission("/www/my-dir"); // 0777
     ```
 
-- `permissions(string $path, ?int $code=null): string|bool`
-
-    Hybrid permissions getter/setter.
-    Set permission to path if `$code` is not `null`.
-    Get permission code if `$code` is `null`
-
-    ```php
-    $client->permissions("/www/my-dir", 0777); // true
-    $client->permissions("/www/my-dir"); // 0777
-    ```
-
-### Directories API
+### Folder API
 
 - `browse(?string $directory=null): array`
 
@@ -320,6 +319,14 @@ $client->connect(true);
 - `copyFolder(string $source, string $destination): bool`
 
     Alias for `duplicateFolder`.
+
+- `moveFolder(string $source, string $destination, bool $override=false): bool`
+
+    Move a folder (cut + paste)
+
+    ```php 
+    $client->moveFolder("C://my-dir", "/www/my-dir");
+    ```
 
 - `uploadFolder(string $source, string $destination, bool $override=false): bool`
 
@@ -367,23 +374,31 @@ $client->connect(true);
 
     Alias for `duplicateFile`.
 
-- `sendFile(string $source, string $destination, bool $override=false): bool`
+- `moveFile(string $source, string $destination, bool $override=false): bool`
+
+    Move a file
+
+    ```php 
+    $client->moveFile("C://my-dir/my-file.txt", "/www/my-dir/my-file.txt");
+    ```
+
+- `uploadFile(string $source, string $destination, bool $override=false): bool`
 
     Send a file from your server to the remote Client
 
     ```php 
-    $client->sendFile("C://my-dir/my-file.txt", "/www/my-dir/my-file.txt");
+    $client->uploadFile("C://my-dir/my-file.txt", "/www/my-dir/my-file.txt");
     ```
 
-- `getFile(string $source, string $destination, bool $override=false): bool`
+- `downloadFile(string $source, string $destination, bool $override=false): bool`
 
     Get a file from a Client to your server
 
     ```php 
-    $client->getFile("/www/my-dir/my-file.txt", "C://my-dir/my-file.txt");
+    $client->downloadFile("/www/my-dir/my-file.txt", "C://my-dir/my-file.txt");
     ```
 
-### Directories & Files API (Hybrid aliases of previous API)
+### Folder & Files API (Hybrid aliases of previous API)
 
 - `delete(?string $path, bool $recursive=true): bool`;
 
@@ -420,20 +435,20 @@ $client->connect(true);
 
     Alias of `move`
 
-- `send(string $source, string $destination, bool $override=false): bool`;
+- `upload(string $source, string $destination, bool $override=false): bool`;
 
     Send a directory or a file from your server to the Client
 
     ```php 
-    $client->send("C://my-dir", "/www/my-dir");
-    $client->send("C://my-dir/my-file.txt", "/www/my-dir/my-file.txt");
+    $client->upload("C://my-dir", "/www/my-dir");
+    $client->upload("C://my-dir/my-file.txt", "/www/my-dir/my-file.txt");
     ``` 
 
-- `get(string $source, string $destination, bool $override=false): bool`;
+- `download(string $source, string $destination, bool $override=false): bool`;
 
     Get a directory or a file from the Client to your server
 
     ```php 
-    $client->get("/www/my-dir", "C://my-dir");
-    $client->get("/www/my-dir/my-file.txt", "C://my-dir/my-file.txt");
+    $client->download("/www/my-dir", "C://my-dir");
+    $client->download("/www/my-dir/my-file.txt", "C://my-dir/my-file.txt");
     ``` 
