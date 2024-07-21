@@ -1,143 +1,149 @@
 <?php 
 namespace OSW3\CloudManager\Services;
 
-use OSW3\CloudManager\Helper\Driver;
-use OSW3\CloudManager\Helper\Port;
 use OSW3\UrlManager\Parser;
+use OSW3\CloudManager\Client;
+use OSW3\CloudManager\Helper\Port;
+use OSW3\CloudManager\Helper\DriverSupport;
 
 class DsnService
 {
-    private ?string $dsn = null;
     private ?string $driver = null;
-    private ?string $user = null;
-    private ?string $pass = null;
-    private ?string $host = null;
-    private ?string $port = null;
+    private ?string $auth   = null;
+    private ?string $user   = null;
+    private ?string $pass   = null;
+    private ?string $token  = null;
+    private ?string $host   = null;
+    private ?string $port   = null;
 
-    public function __construct(?string $dsn=null)
+    public function __construct(private string $dsn)
     {
-        if ($dsn)
-        {
-            $this->set($dsn);
-        }
+        $parser = new Parser($dsn);
+
+        $dsn_scheme = $parser->fetch('scheme');
+        $scheme     = explode(":", $dsn_scheme);
+        $dsn_user   = $parser->fetch('username');
+        $dsn_pass   = $parser->fetch('password');
+        $dsn_host   = $parser->fetch('hostname');
+        $dsn_port   = $parser->fetch('port');
+        
+        
+        // Driver
+        // --
+
+        $this->driver = array_shift($scheme);
+
+
+        // Auth Method
+        // --
+
+        $this->auth = array_shift($scheme);
+
+
+        // User
+        // --
+
+        if (in_array($dsn_scheme, [
+            DriverSupport::FTP,
+        ])) $this->user = $dsn_user;
+        
+        else if (in_array($dsn_scheme, [
+            DriverSupport::DROPBOX_BASIC,
+        ])) $this->user = $dsn_host;
+
+
+        // Pass
+        // --
+
+        if (in_array($dsn_scheme, [
+            DriverSupport::FTP,
+        ])) $this->pass = $dsn_pass;
+
+        else if (in_array($dsn_scheme, [
+            DriverSupport::DROPBOX_BASIC,
+        ])) $this->pass = $dsn_port;
+
+
+        // Token
+        // --
+
+        if (in_array($dsn_scheme, [
+            DriverSupport::DROPBOX_TOKEN,
+        ])) $this->token = $dsn_host;
+
+
+        // Host
+        // --
+
+        if (in_array($dsn_scheme, [
+            DriverSupport::DROPBOX_BASIC,
+            DriverSupport::DROPBOX_TOKEN,
+        ])) $dsn_host = null;
+
+        $this->host = $dsn_host;
+
+
+        // Port
+        // --
+
+        if (in_array($dsn_scheme, [
+            DriverSupport::DROPBOX_BASIC,
+        ])) $dsn_port = null;
+
+        $this->port = $dsn_port ? $dsn_port : match($this->driver) {
+            DriverSupport::FTP => Port::FTP,
+            default            => null,
+        };
     }
 
-    public function set(string $dsn): static
+    public function get(): null|string
     {
-        $this->dsn = $dsn;
-        $this->parse();
+        $params = [];
+        $params = $this->auth ? array_merge($params, ["auth" => $this->auth]) : $params;
 
-        return $this;
-    }
-    public function get(bool $asArray=false): null|string|array
-    {
         $dsn = "";
-
-        if ($this->getDriver())
+        $dsn .= $this->driver ? "{$this->driver}://": null;
+        if ($this->auth === 'token')
         {
-            $dsn.= "{$this->getDriver()}://";
+            $dsn .= $this->token;
         }
-
-        $dsn.= $this->getUser();
-
-        if ($this->getPass())
-        {
-            $dsn.= ":{$this->getPass()}";
+        else {
+            $dsn .= $this->user;
+            $dsn .= $this->pass ? ":{$this->pass}": null;
+            $dsn .= $this->host ? "@{$this->host}": null;
+            $dsn .= $this->port ? $this->port : null;
         }
-
-        if ($this->getHost())
-        {
-            $dsn.= "@{$this->getHost()}";
-        }
-
-        if ($this->getPort())
-        {
-            $dsn.= ":{$this->getPort()}";
-        }
-
-        if ($asArray)
-        {
-            $dsn = [
-                'string' => $dsn,
-                'driver' => $this->getDriver(),
-                'user' => $this->getUser(),
-                'pass' => $this->getPass(),
-                'host' => $this->getHost(),
-                'port' => $this->getPort(),
-            ];
-        }
+        $dsn .= !empty($params) ? "?".http_build_query($params) : null;
+        
         return $dsn;
     }
 
-    public function setDriver(string $driver): static
-    {
-        $this->driver = $driver;
-
-        return $this;
-    }
     public function getDriver(): ?string 
     {
         return $this->driver;
     }
-
-    public function setUser(string $user): static
+    public function getAuth(): ?string 
     {
-        $this->user = $user;
-
-        return $this;
+        return $this->auth;
     }
     public function getUser(): ?string 
     {
         return $this->user;
     }
-
-    public function setPass(string $pass): static
-    {
-        $this->pass = $pass;
-
-        return $this;
-    }
     public function getPass(): ?string 
     {
         return $this->pass;
     }
-
-    public function setHost(string $host): static
+    public function getToken(): ?string 
     {
-        $this->host = $host;
-
-        return $this;
+        return $this->token;
     }
     public function getHost(): ?string 
     {
         return $this->host;
     }
-
-    public function setPort(string $port): static
-    {
-        $this->port = $port;
-
-        return $this;
-    }
     public function getPort(): ?string 
     {
-        return $this->port ? $this->port : match($this->driver) {
-            Driver::FTP  => Port::FTP,
-            Driver::FTPS => Port::FTPS,
-            Driver::SFTP => Port::SFTP,
-            Driver::SSH  => Port::SSH,
-            default      => null,
-        };
-    }
-
-
-    private function parse()
-    {
-        $parser = new Parser($this->dsn);
-        $this->setDriver( $parser->fetch('scheme') );
-        $this->setUser( $parser->fetch('username') );
-        $this->setPass( $parser->fetch('password') );
-        $this->setHost( $parser->fetch('hostname') );
-        $this->setPort( $parser->fetch('port') );
+        return $this->port;
     }
 }

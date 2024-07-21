@@ -1,6 +1,8 @@
 <?php 
 namespace OSW3\CloudManager\Drivers;
 
+use OSW3\CloudManager\Enum\Metadata;
+use OSW3\CloudManager\Enum\MetadataType;
 use OSW3\CloudManager\Drivers\AbstractDriver;
 use OSW3\CloudManager\Interfaces\DriverInterface;
 
@@ -8,74 +10,48 @@ class FtpDriver extends AbstractDriver implements DriverInterface
 {
     private bool $isPassive = false;
 
-    // Driver
+
+    // Driver Statement
     // --
 
-    /**
-     * Proceed to driver connection
-     *
-     * @return static
-     */
-    public function connect(): static
+    public function connect(): bool
     {
+        $connection = null;
+        $credential = null;
+
         if (!$this->isConnected())
         {
-            $this->connection = @ftp_connect($this->getHost(), $this->getPort());
+            $connection = @ftp_connect($this->getHost(), $this->getPort());
             $this->setActiveMode();
+
+            if ($connection) $credential = @ftp_login(
+                $connection, 
+                $this->getUser(), 
+                $this->getPass()
+            );
+            
+            if (!$credential)
+            {
+                $this->disconnect();
+            }
         }
 
-        return $this;
-    }
+        $this->connection = $connection;
 
-    /**
-     * Proceed to driver disconnection
-     *
-     * @return static
-     */
-    public function disconnect(): static
+        return $this->isConnected();
+    }
+    public function disconnect(): bool
     {
         if ($this->isConnected())
         {
             $this->connection = !ftp_close( $this->connection );
-
-            if (!$this->connection)
-            {
-                $this->credential = false;
-            }
         }
 
-        return $this;
+        return $this->isConnected();
     }
-
-    /**
-     * User authentication
-     *
-     * @return static
-     */
-    public function authenticate(): static 
-    {
-        if ($this->connection)
-        {
-            $this->credential = @ftp_login(
-                $this->connection, 
-                $this->getUser(), 
-                $this->getPass()
-            );
-        }
-
-        if (!$this->credential)
-        {
-            $this->disconnect();
-        }
-
-        return $this;    
-    }
-
-
-    // Client File System
-    // --
 
     // Pointer location & navigation
+    // --
 
     public function location(): ?string 
     {
@@ -86,54 +62,25 @@ class FtpDriver extends AbstractDriver implements DriverInterface
         return $this->cd($directory);
     }
 
-    // File types
+    // Entry infos
+    // --
 
-    public function isDirectory(string $path) :bool 
+    public function infos(?string $path=null, ?string $part=null): array|string|null
     {
-        return $this->type($path) === 'directory';
-    }
-    public function isFile(string $path) :bool 
-    {
-        return $this->type($path) === 'file';
-    }
-    public function isLink(string $path) :bool 
-    {
-        return $this->type($path) === 'link';
-    }
-    public function isBlock(string $path) :bool 
-    {
-        return $this->type($path) === 'block';
-    }
-    public function isCharacter(string $path) :bool 
-    {
-        return $this->type($path) === 'character';
-    }
-    public function isSocket(string $path) :bool 
-    {
-        return $this->type($path) === 'socket';
-    }
-    public function isPipe(string $path) :bool 
-    {
-        return $this->type($path) === 'pipe';
-    }
-
-    // File infos
-
-    public function infos(?string $path=null, ?string $part=null): array|string
-    {
-        if (!$this->isConnected() || !$this->hasCredential()) {
-            return [];
+        if (!$this->isConnected()) {
+            return null;
         }
 
         if (!$path) $path = $this->pwd();
+        
+        $infos = null;
 
         // Get path parent directory
         $parent = explode("/", $path);
         array_pop($parent);
         $parent = implode("/", $parent);
 
-        if (empty($parent))
-        {
+        if (empty($parent)){
             $parent = "/";
         }
 
@@ -141,56 +88,51 @@ class FtpDriver extends AbstractDriver implements DriverInterface
         $contents = $this->ls($parent);
         
         // find path
-        foreach ($contents as $entry)
+        $find = false;
+        foreach ($contents as $infos)
         {
-            if ($entry['filepath'] === $path)
-            {
-                switch ($part)
-                {
-                    case 'permissions':
-                        return $entry['permissions']['code'];
-                    break;
-                    case 'size':
-                        return $entry['filesize'];
-                    break;
-                    case 'owner':
-                        return $entry['owner'];
-                    break;
-                    case 'group':
-                        return $entry['group'];
-                    break;
-                    case 'nodes':
-                        return $entry['nodes'];
-                    break;
-                    case 'type':
-                        return $entry['type'];
-                    break;
-
-                    default: return $entry;
-                }
+            if ($infos[Metadata::PATH->value] === $path) {
+                $find = true;
+                break;
             }
         }
 
-        return [];
-    }
-    public function permissions(string $path, ?int $code = null): string|bool
-    {
-        if ($code === null)
+        if ($part == null && $find)
         {
-            return $this->infos($path, 'permissions');
+            return $infos;
         }
 
-        return $this->chmod($code, $path);
+        return $infos[$part] ?? null;
+    }
+    public function permissions(string $path, null|string|int $mode = null): string|bool|null
+    {
+        if (!$this->isConnected()) {
+            return false;
+        }
+
+        if ($mode === null)
+        {
+            $infos = $this->infos($path, Metadata::PERMISSIONS->value);
+
+            return $infos;
+        }
+
+        return $this->chmod($mode, $path);
     }
 
-    // Directory
+    // Folder API
+    // --
 
-    public function directoryList(?string $directory=null): array 
+    public function browse(?string $directory=null): array 
     {
         return $this->ls($directory);
     }
-    public function createDirectory(string $directory, int $permissions=0700, bool $navigateTo = true): bool
+    public function createFolder(string $directory, int $permissions=0700, bool $navigateTo = true): bool
     {
+        if (!$this->isConnected()) {
+            return false;
+        }
+
         $proceed = $this->mkdir($directory, $permissions);
 
         if ($proceed['code'] === 0 && $navigateTo)
@@ -200,16 +142,16 @@ class FtpDriver extends AbstractDriver implements DriverInterface
 
         return $proceed['code'] === 0;
     }
-    public function deleteDirectory(?string $directory, bool $recursive=true): bool
+    public function deleteFolder(?string $directory, bool $recursive=true): bool
     {
         return $this->rmdir($directory, $recursive);
     }
-    public function duplicateDirectory(string $source, string $destination): bool
+    public function duplicateFolder(string $source, string $destination): bool
     {
         $state = false;
         $checker = [];
 
-        if (!$this->isConnected() || !$this->hasCredential()) {
+        if (!$this->isConnected()) {
             return false;
         }
 
@@ -218,56 +160,44 @@ class FtpDriver extends AbstractDriver implements DriverInterface
             return false;
         }
 
-        $this->createDirectory($destination); // true / false
+        $entries = $this->getRecursiveFolderEntries($source, $destination);
 
-        foreach ($this->directoryList($source) as $entry)
+        foreach ($entries as $entry)
         {
-            $entrySource       = preg_match("/\/$/", $source) ? $source : $source."/";
-            $entrySource      .= $entry['filename'];
-            $entryDestination  = preg_match("/\/$/", $destination) ? $destination : $destination."/";
-            $entryDestination .= $entry['filename'];
-
-            array_push($checker, $entryDestination);
-
-            if ($entry['type'] === 'directory')
+            if ($entry[0] === MetadataType::FOLDER->value)
             {
-                $this->duplicateDirectory($entrySource, $entryDestination);
+                $state = $this->createFolder($entry[2]);
             }
-            else if ($entry['type'] === 'file')
+            else if ($entry[0] === MetadataType::FILE->value)
             {
-                $this->duplicateFile($entrySource, $entryDestination); // true / false
+                $state = $this->duplicateFile($entry[1], $entry[2]);
             }
-        }
-
-        foreach ($checker as $entry)
-        {
-            $state = !!$this->infos($entry);
 
             if (!$state) break;
         }
 
         return $state;
     }
-    public function moveDirectory(string $source, string $destination): bool
+    public function moveFolder(string $source, string $destination): bool
     {
         $state = false;
 
-        if ($this->isConnected() && $this->hasCredential() && $this->isDir($source))
+        if ($this->isConnected() && $this->isDir($source))
         {
-            if ($this->duplicateDirectory($source, $destination))
+            if ($this->duplicateFolder($source, $destination))
             {
-                $state = $this->deleteDirectory($source);
+                $state = $this->deleteFolder($source);
             }
         }
 
         return $state;
     }
-    public function sendDirectory(string $source, string $destination, bool $override=false): bool
+    public function uploadFolder(string $source, string $destination, bool $override=false): bool
     {
         $state = false;
         $checker = [];
 
-        if ($this->isConnected() && $this->hasCredential() && is_dir($source))
+        if ($this->isConnected() && is_dir($source))
         {
             $content = scandir($source);
 
@@ -283,12 +213,12 @@ class FtpDriver extends AbstractDriver implements DriverInterface
                     
                     if (is_dir($entrySource))
                     {
-                        $this->createDirectory($entryDestination); // true / false
-                        $this->sendDirectory($entrySource, $entryDestination);
+                        $this->createFolder($entryDestination); // true / false
+                        $this->uploadFolder($entrySource, $entryDestination);
                     }
                     else if (is_file($entrySource))
                     {
-                        $this->sendFile($entrySource, $entryDestination, $override);
+                        $this->uploadFile($entrySource, $entryDestination, $override);
                     }
                 }
             }
@@ -303,12 +233,12 @@ class FtpDriver extends AbstractDriver implements DriverInterface
 
         return $state;
     }
-    public function getDirectory(string $source, string $destination, bool $override=false): bool
+    public function downloadFolder(string $source, string $destination, bool $override=false): bool
     {
         $state = false;
         $checker = [];
 
-        if (!$this->isConnected() || !$this->hasCredential()) {
+        if (!$this->isConnected()) {
             return false;
         }
 
@@ -318,27 +248,27 @@ class FtpDriver extends AbstractDriver implements DriverInterface
 
         if (!is_dir($destination) || $override)
         {
-            foreach ($this->directoryList($source) as $entry)
+            foreach ($this->browse($source) as $entry)
             {
                 $entrySource       = preg_match("/\/$/", $source) ? $source : $source."/";
-                $entrySource      .= $entry['filename'];
+                $entrySource      .= $entry['name'];
                 $entryDestination  = preg_match("/\/$/", $destination) ? $destination : $destination."/";
-                $entryDestination .= $entry['filename'];
+                $entryDestination .= $entry['name'];
                 $entryPermissions =  0700; //$entry['permissions']['codes'];
 
                 array_push($checker, $entryDestination);
 
-                if ($entry['type'] === 'directory')
+                if ($entry['type'] === MetadataType::FOLDER->value)
                 {
                     if (!is_dir($entryDestination))
                     {
                         mkdir($entryDestination, $entryPermissions, true);
                     }
-                    $this->getDirectory($entrySource, $entryDestination, $override);
+                    $this->downloadFolder($entrySource, $entryDestination, $override);
                 }
                 else if ($entry['type'] === 'file')
                 {
-                    $this->getFile($entrySource, $entryDestination, $override); // true / false
+                    $this->downloadFile($entrySource, $entryDestination, $override); // true / false
                 }
             }
         }
@@ -353,20 +283,20 @@ class FtpDriver extends AbstractDriver implements DriverInterface
         return $state;
     }
 
-    // File
+    // File API
+    // --
 
     public function createFile(string $filename, string $content="", bool $binary=false): bool 
     {
         $state = false;
 
-        if (!$this->isConnected() || !$this->hasCredential()) {
+        if (!$this->isConnected()) {
             return false;
         }
 
-        if ($this->isFile($filename)){
+        if ($this->type($filename) === MetadataType::FILE->value) {
             return false;
         }
-
 
         $mode = $binary ? FTP_BINARY : FTP_ASCII;
 
@@ -375,7 +305,7 @@ class FtpDriver extends AbstractDriver implements DriverInterface
              array_pop($d);
         $d = implode("/", $d);
 
-        $this->createDirectory($d);
+        $this->createFolder($d);
 
         $temp = fopen('php://temp', 'r+');
                 fwrite($temp, $content);
@@ -399,28 +329,34 @@ class FtpDriver extends AbstractDriver implements DriverInterface
     {
         $state = false;
 
-        if ($this->isConnected() && $this->hasCredential())
+        if (!$this->isConnected()) {
+            return false;
+        }
+
+        $sourceExists = $this->type($source) === MetadataType::FILE->value;
+        $destinationExists = $this->type($destination) === 'unknown';
+        
+        if ($sourceExists && $destinationExists)
         {
-            if ($this->isFile($source) && !$this->isFile($destination))
+            // Create parent directory if don't exists
+            $destinationParentDirectory = explode("/", $destination);
+            array_pop($destinationParentDirectory);
+            $destinationParentDirectory = implode("/", $destinationParentDirectory);
+            
+            $this->createFolder($destinationParentDirectory);
+            $this->setPassiveMode();
+
+            $temp_file = $this->getLocalTempFilename();
+
+            // $mode = FTP_ASCII;
+            $mode = FTP_BINARY;
+            if (@ftp_get($this->connection, $temp_file, $source, $mode))
             {
-                // Create parent directory if don't exists
-                $destinationParentDirectory = explode("/", $destination);
-                     array_pop($destinationParentDirectory);
-                $destinationParentDirectory = implode("/", $destinationParentDirectory);
-    
-                $this->createDirectory($destinationParentDirectory);
-                $this->setPassiveMode();
-
-                $temp_file = $this->getLocalTempFilename();
-
-                if (@ftp_get($this->connection, $temp_file, $source, FTP_BINARY))
-                {
-                    $state = @ftp_put($this->connection, $destination, $temp_file, FTP_BINARY);
-                    unlink($temp_file);
-                }
-
-                $this->setActiveMode();
+                $state = @ftp_put($this->connection, $destination, $temp_file, $mode);
+                unlink($temp_file);
             }
+
+            $this->setActiveMode();
         }
 
         return $state;
@@ -429,7 +365,7 @@ class FtpDriver extends AbstractDriver implements DriverInterface
     {
         $state = false;
 
-        if ($this->isConnected() && $this->hasCredential() && $this->isFile($source))
+        if ($this->isConnected() && $this->type($source) === MetadataType::FILE->value)
         {
             if ($this->duplicateFile($source, $destination))
             {
@@ -439,14 +375,21 @@ class FtpDriver extends AbstractDriver implements DriverInterface
 
         return $state;
     }
-    public function sendFile(string $source, string $destination, bool $override=false): bool
+    public function uploadFile(string $source, string $destination, bool $override=false): bool
     {
         $state = false;
 
-        if ($this->isConnected() && $this->hasCredential() && is_file($source))
+        if ($this->isConnected() && is_file($source))
         {
-            if (!$this->isFile($destination) || $override)
+            if ($this->type($destination) !== MetadataType::FILE->value || $override)
             {
+                // Create parent directory if don't exists
+                $destinationParentDirectory = explode("/", $destination);
+                array_pop($destinationParentDirectory);
+                $destinationParentDirectory = implode("/", $destinationParentDirectory);
+                
+                $this->createFolder($destinationParentDirectory);
+
                 $this->setPassiveMode();
                 $state = ftp_put($this->connection, $destination, $source);
                 $this->setActiveMode();
@@ -455,15 +398,15 @@ class FtpDriver extends AbstractDriver implements DriverInterface
 
         return $state;
     }
-    public function getFile(string $source, string $destination, bool $override=false): bool
+    public function downloadFile(string $source, string $destination, bool $override=false): bool
     {
         $state = false;
 
-        if (!$this->isConnected() || !$this->hasCredential()) {
+        if (!$this->isConnected()) {
             return false;
         }
 
-        if (!$this->isFile($source)) {
+        if ($this->type($source) !== MetadataType::FILE->value) {
             return false;
         }
 
@@ -477,21 +420,24 @@ class FtpDriver extends AbstractDriver implements DriverInterface
         return $state;
     }
 
-    // Directory & File both
+    // Folder & File both
+    // --
 
     public function delete(?string $path, bool $recursive=true): bool
     {
-        return $this->isDir($path) 
-            ? $this->deleteDirectory($path, $recursive)
-            : $this->deleteFile($path)
-        ;
+        return match($this->infos($path, 'type'))
+        {
+            MetadataType::FOLDER->value => $this->deleteFolder($path, $recursive),
+            MetadataType::FILE->value => $this->deleteFolder($path, $recursive),
+            default => false
+        };
     }
     public function duplicate(string $source, string $destination): bool
     {
         return match($this->infos($source, 'type'))
         {
-            'directory' => $this->duplicateDirectory($source, $destination),
-            'file' => $this->duplicateFile($source, $destination),
+            MetadataType::FOLDER->value => $this->duplicateFolder($source, $destination),
+            MetadataType::FILE->value => $this->duplicateFile($source, $destination),
             default => false
         };
     }
@@ -499,25 +445,25 @@ class FtpDriver extends AbstractDriver implements DriverInterface
     {
         return match($this->infos($source, 'type'))
         {
-            'directory' => $this->moveDirectory($source, $destination),
-            'file' => $this->moveFile($source, $destination),
+            MetadataType::FOLDER->value => $this->moveFolder($source, $destination),
+            MetadataType::FILE->value => $this->moveFile($source, $destination),
             default => false
         };
     }
-    public function send(string $source, string $destination, bool $override=false): bool
+    public function upload(string $source, string $destination, bool $override=false): bool
     {
         if (is_dir($source))
         {
-            return $this->sendDirectory($source, $destination, $override);
+            return $this->uploadFolder($source, $destination, $override);
         }
         else if (is_file($source))
         {
-            return $this->sendFile($source, $destination, $override);
+            return $this->uploadFile($source, $destination, $override);
         }
 
         return false;
     }
-    public function get(string $source, string $destination, bool $override=false): bool
+    public function download(string $source, string $destination, bool $override=false): bool
     {
         if (preg_match("/\/$/", $source)) 
         {
@@ -526,68 +472,42 @@ class FtpDriver extends AbstractDriver implements DriverInterface
 
         return match($this->infos($source, 'type'))
         {
-            'directory' => $this->getDirectory($source, $destination, $override),
-            'file' => $this->getFile($source, $destination, $override),
+            MetadataType::FOLDER->value => $this->downloadFolder($source, $destination, $override),
+            MetadataType::FILE->value => $this->downloadFile($source, $destination, $override),
             default => false
         };
     }
 
-
     // Driver File System
     // --
 
-    private function pwd(): ?string 
+    private function pwd(): string|false
     {
-        $pwd = null;
-
-        if ($this->isConnected() && $this->hasCredential())
+        if (!$this->isConnected())
         {
-            $pwd = ftp_pwd( $this->connection );
+            return false;
         }
 
-        return $pwd;
+        return ftp_pwd( $this->connection );
     }
     private function cd(string $directory): bool
     {
-        switch ($directory)
+        if ($directory === "./") 
         {
-            case './':
-            break;
+            return true;
+        }
 
-            case '../':
-                $cdir = explode("/", $this->pwd());
-                unset($cdir[(count($cdir)-1)]);
-                // $this->cdir = implode("/", $cdir);
-
-                return ftp_cdup($this->connection);
-            break;
-
-            default:
-                if ($this->isDir($directory))
-                {
-                    // $this->cdir = $path;
-                    return ftp_chdir($this->connection, $directory);
-                }
+        if ($directory === "../") 
+        {
+            return ftp_cdup($this->connection);
+        }
+        
+        if ($this->isDir($directory))
+        {
+            return ftp_chdir($this->connection, $directory);
         }
 
         return false;
-    }
-    private function ls(?string $directory=null, $raw=false): array
-    {
-        $infos = [];
-
-        if ($this->isConnected() && $this->hasCredential())
-        {
-            if (!$directory) $directory = $this->pwd();
-
-            $this->setPassiveMode();
-            $ls = ftp_rawlist($this->connection, $directory);
-            $this->setActiveMode();
-
-            $infos = $raw ? $ls : $this->parseList($ls, $directory);
-        }
-
-        return $infos;
     }
     private function isDir(string $directory): bool
     {
@@ -601,11 +521,134 @@ class FtpDriver extends AbstractDriver implements DriverInterface
 
         return false;
     }
+    private function ls(?string $directory=null): array
+    {
+        $infos = [];
+        $data = [];
+
+        if ($this->isConnected())
+        {
+            if (!$directory) $directory = $this->pwd();
+
+            $this->setPassiveMode();
+            $data = ftp_rawlist($this->connection, $directory);
+            $this->setActiveMode();
+
+            // $infos = $this->parseList($metadata, $directory);
+        }
+
+        foreach ($data as $metadata)
+        {
+            // Data Extraction
+            // --
+
+            // Extract file type and permissions
+            preg_match("/^[-ld]([-|r|w|x]{3}){3}/", $metadata, $permissions);
+            $column_1 = $permissions[0];
+            $metadata    = trim(preg_replace("/$column_1/", "", $metadata));
+
+            // Extract $entry nodes / links
+            $column_2 = intval(substr($metadata, 0, 1));
+            $metadata    = trim(substr($metadata, 1));
+
+            // Extract Owner name
+            preg_match("/^\d+/", $metadata, $results);
+            $column_3 = $results[0];
+            $metadata    = trim(substr($metadata, strlen($column_3)));
+
+            // Extract Group name
+            preg_match("/^\d+/", $metadata, $results);
+            $column_4 = $results[0];
+            $metadata    = trim(substr($metadata, strlen($column_4)));
+
+            // Extract Filesize
+            preg_match("/^\d+/", $metadata, $results);
+            $column_5 = intval($results[0]);
+            $metadata    = trim(substr($metadata, strlen($column_5)));
+
+            // Extract Date
+            preg_match("/^(Jan|Feb|Mar|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2}\s+(\d{4}|\d{2}:\d{2})/", $metadata, $results);
+            $column_6 = $results[0];
+            $metadata    = trim(substr($metadata, strlen($column_6)));
+
+            // Extract Filename
+            $column_7 = $metadata;
+
+
+            // Parse Data
+            // --
+
+            // Type
+            $type = match(substr($column_1, 0, 1)) 
+            {
+                "-" => "file",
+                "d" => "folder",
+                "l" => "link",
+                "b" => "block",
+                "c" => "character",
+                "s" => "socket",
+                "p" => "pipe",
+            };
+
+            // Permissions
+            $permissions = $this->parsePermissionsCode([
+                'owner' => [
+                    'read'  => substr($column_1, 1, 1) === "r",
+                    'write' => substr($column_1, 2, 1) === "w",
+                    'exec'  => substr($column_1, 3, 1) === "x",
+                ],
+                'group' => [
+                    'read'  => substr($column_1, 4, 1) === "r",
+                    'write' => substr($column_1, 5, 1) === "w",
+                    'exec'  => substr($column_1, 6, 1) === "x",
+                ],
+                'anon' => [
+                    'read'  => substr($column_1, 7, 1) === "r",
+                    'write' => substr($column_1, 8, 1) === "w",
+                    'exec'  => substr($column_1, 9, 1) === "x",
+                ],
+            ]);
+
+            // Owner
+            $owner = $column_3;
+
+            // Group
+            $group = $column_4;
+
+            // Nodes
+            $nodes = $column_2;
+
+            // File date
+            $date = (new \DateTime($column_6))->format('Y-m-d\TH:i:s\Z');
+
+            // File size
+            $filesize = $column_5;
+
+            // File name and Path
+            $filename = $column_7;
+            $filepath = "{$directory}/{$filename}";
+            $filepath = str_replace("//", "/", $filepath);
+
+            array_push($infos, array_merge(static::METADATA, [
+                Metadata::TYPE->value        => $type,
+                Metadata::NAME->value        => $filename,
+                Metadata::PATH->value        => $filepath,
+                Metadata::SIZE->value        => $filesize,
+                Metadata::OWNER->value       => $owner,
+                Metadata::GROUP->value       => $group,
+                Metadata::PERMISSIONS->value => $permissions,
+                Metadata::NODES->value       => $nodes,
+                Metadata::MODIFIED->value    => $date,
+            ]));
+        }
+        
+        return $infos;
+    }
     private function type(string $path): string
     {
         if ($this->isDir($path))
         {
-            return "directory";
+            return MetadataType::FOLDER->value;
         }
         
         // Get current directory
@@ -623,9 +666,9 @@ class FtpDriver extends AbstractDriver implements DriverInterface
     }
     private function rmdir(string $directory, bool $recursive=false): bool
     {
-        if ($this->isConnected() && $this->hasCredential())
+        if ($this->isConnected())
         {
-            $current = $this->pwd();
+            // $current = $this->pwd();
 
             // Exit false if $directory don't exist
             if (!$this->isDir($directory))
@@ -638,13 +681,13 @@ class FtpDriver extends AbstractDriver implements DriverInterface
             {
                 foreach ($this->ls($directory) as $entry)
                 {
-                    if ($entry['isFile'])
+                    if ($entry['type'] === MetadataType::FILE->value)
                     {
-                        $this->rm($entry['filepath']);
+                        $this->rm($entry['path']);
                     }
-                    else if ($entry['isDirectory'])
+                    else if ($entry['type'] === MetadataType::FOLDER->value)
                     {
-                        $this->rmdir($entry['filepath'], $recursive);
+                        $this->rmdir($entry['path'], $recursive);
                     }
                 }
 
@@ -666,9 +709,8 @@ class FtpDriver extends AbstractDriver implements DriverInterface
     }
     private function rm(string $filename): bool
     {
-        if ($this->isConnected() && $this->hasCredential())
+        if ($this->isConnected())
         {
-            print_r($this->isDir($filename));
             return @ftp_delete($this->connection, $filename);
         }
 
@@ -681,7 +723,7 @@ class FtpDriver extends AbstractDriver implements DriverInterface
         // 2 = directory already exists
         // 9 = not executed
         
-        if ($this->isConnected() && $this->hasCredential())
+        if ($this->isConnected())
         {
             $current = $this->pwd();
 
@@ -756,7 +798,7 @@ class FtpDriver extends AbstractDriver implements DriverInterface
     }
     private function chmod(string|int $permissions, string $filename): bool
     {
-        if ($this->isConnected() && $this->hasCredential())
+        if ($this->isConnected())
         {
             return ftp_chmod($this->connection, $permissions, $filename);
         }
@@ -765,7 +807,7 @@ class FtpDriver extends AbstractDriver implements DriverInterface
     }
     private function allocateSpace(int $size): bool
     {
-        if ($this->isConnected() && $this->hasCredential())
+        if ($this->isConnected())
         {
             return ftp_alloc($this->connection, $size);
         }
@@ -795,14 +837,101 @@ class FtpDriver extends AbstractDriver implements DriverInterface
     }
     private function setActiveMode(): static
     {
-        $this->isPassive = !ftp_pasv($this->connection, false);
+        if ($this->isConnected())
+        {
+            $this->isPassive = !ftp_pasv($this->connection, false);
+        }
 
         return $this;
     }
     private function setPassiveMode(): static
     {
-        $this->isPassive = ftp_pasv($this->connection, true);
+        if ($this->isConnected())
+        {
+            $this->isPassive = ftp_pasv($this->connection, true);
+        }
 
         return $this;
+    }
+
+
+
+
+
+
+
+
+
+    private function parsePermissionsCode($permissions)
+    {
+        return  "0".$this->parsePermissionsPart($permissions, 'owner').
+                $this->parsePermissionsPart($permissions, 'group').
+                $this->parsePermissionsPart($permissions, 'anon');
+    }
+    private function parsePermissionsPart(array $permissions, string $part)
+    {
+        if (!$permissions[$part]['read'] && !$permissions[$part]['write'] && !$permissions[$part]['exec'])
+        {
+            $code = 0;
+        }
+        else if (!$permissions[$part]['read'] && !$permissions[$part]['write'] && $permissions[$part]['exec'])
+        {
+            $code = 1;
+        }
+        else if (!$permissions[$part]['read'] && $permissions[$part]['write'] && !$permissions[$part]['exec'])
+        {
+            $code = 2;
+        }
+        else if (!$permissions[$part]['read'] && $permissions[$part]['write'] && $permissions[$part]['exec'])
+        {
+            $code = 3;
+        }
+        else if ($permissions[$part]['read'] && !$permissions[$part]['write'] && !$permissions[$part]['exec'])
+        {
+            $code = 4;
+        }
+        else if ($permissions[$part]['read'] && !$permissions[$part]['write'] && $permissions[$part]['exec'])
+        {
+            $code = 5;
+        }
+        else if ($permissions[$part]['read'] && $permissions[$part]['write'] && !$permissions[$part]['exec'])
+        {
+            $code = 6;
+        }
+        else if ($permissions[$part]['read'] && $permissions[$part]['write'] && $permissions[$part]['exec'])
+        {
+            $code = 7;
+        }
+
+        return $code;
+    }
+    private function getRecursiveFolderEntries(string $source, string $destination, array $entries=[]): array
+    {
+        $entries = array_merge($entries, [$source => [
+            MetadataType::FOLDER->value,
+            $source,
+            $destination
+        ]]);
+
+        foreach ($this->browse($source) as $entry)
+        {
+            $entrySource       = preg_match("/\/$/", $source) ? $source : $source."/";
+            $entrySource      .= $entry['name'];
+            $entryDestination  = preg_match("/\/$/", $destination) ? $destination : $destination."/";
+            $entryDestination .= $entry['name'];
+
+            $entries = array_merge($entries, [$entrySource => [
+                $entry['type'],
+                $entrySource,
+                $entryDestination
+            ]]);
+
+            if ($entry['type'] === MetadataType::FOLDER->value)
+            {
+                $entries = $this->getRecursiveFolderEntries($entrySource, $entryDestination, $entries);
+            }
+        }
+
+        return $entries;
     }
 }

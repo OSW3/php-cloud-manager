@@ -284,57 +284,57 @@ $client->connect(true);
 
 ### Directories API
 
-- `directoryList(?string $directory=null): array`
+- `browse(?string $directory=null): array`
 
     Return the content of a directory, like the Unix PWD command.
     Return the current pointer location content if the `$directory` parameter is `null`.
 
     ```php 
-    $client->directoryList("/www/my-dir"); // [...]
+    $client->browse("/www/my-dir"); // [...]
     ```
 
-- `createDirectory(string $directory, int $permissions=0700, bool $navigateTo = true): bool`
+- `createFolder(string $directory, int $permissions=0700, bool $navigateTo = true): bool`
 
     Create a directory and set the pointer into the new location id `$navigateTo` is `true`.
 
     ```php 
-    $client->createDirectory("/www/my-dir/my-sub-dir");
+    $client->createFolder("/www/my-dir/my-sub-dir");
     ```
 
-- `deleteDirectory(?string $directory, bool $recursive=true): bool`
+- `deleteFolder(?string $directory, bool $recursive=true): bool`
 
     Delete a directory and its contains.
 
     ```php 
-    $client->deleteDirectory("/www/my-dir/my-sub-dir");
+    $client->deleteFolder("/www/my-dir/my-sub-dir");
     ```
 
-- `duplicateDirectory(string $source, string $destination): bool`
+- `duplicateFolder(string $source, string $destination): bool`
 
     Duplicate a directory on the Client
 
     ```php 
-    $client->duplicateDirectory("/www/my-dir", "/www/my-other-dirt");
+    $client->duplicateFolder("/www/my-dir", "/www/my-other-dirt");
     ```
 
-- `copyDirectory(string $source, string $destination): bool`
+- `copyFolder(string $source, string $destination): bool`
 
-    Alias for `duplicateDirectory`.
+    Alias for `duplicateFolder`.
 
-- `sendDirectory(string $source, string $destination, bool $override=false): bool`
+- `uploadFolder(string $source, string $destination, bool $override=false): bool`
 
     Send a directory from your server to the remote Client
 
     ```php 
-    $client->sendDirectory("C://my-dir", "/www/my-dir");
+    $client->uploadFolder("C://my-dir", "/www/my-dir");
     ```
 
-- `getDirectory(string $source, string $destination, bool $override=false): bool`
+- `downloadFolder(string $source, string $destination, bool $override=false): bool`
 
     Get a directory from a Client to your server
 
     ```php 
-    $client->getDirectory("/www/my-dir", "C://my-dir");
+    $client->downloadFolder("/www/my-dir", "C://my-dir");
     ```
 
 ### Files API
