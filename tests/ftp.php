@@ -8,23 +8,22 @@ require __DIR__ . "/../vendor/autoload.php";
 if (file_exists(__DIR__."/config.php")) include __DIR__."/config.php";
 
 
-if (!isset($dropbox_app_key)) $dropbox_app_key = "";
-if (!isset($dropbox_app_secret)) $dropbox_app_secret = "";
-if (!isset($dropbox_access_token)) $dropbox_access_token = "";
+if (!isset($ftp_host)) $ftp_host = "";
+if (!isset($ftp_user)) $ftp_user = "";
+if (!isset($ftp_pass)) $ftp_pass = "";
 
 
 
 
 
 print_r("\n\n");
-print_r("-- OSW3 CLOUD MANAGER -- DROPBOX DRIVER ------------------------------ \n\n");
+print_r("-- OSW3 CLOUD MANAGER -- FTP ----------------------------------------- \n\n");
 
 
 // Generate DSN
 // ----------------------------------
 
-// $dsn = "dropbox:basic://{$dropbox_app_key}:{$dropbox_app_secret}";
-$dsn = "dropbox:token://{$dropbox_access_token}";
+$dsn = "ftp://{$ftp_user}:{$ftp_pass}@{$ftp_host}:21";
 
 
 
@@ -108,7 +107,7 @@ print_r("Location : {$client->location()} \n\n");
 // ----------------------------------
 
 // print_r("Navigate to '/www/my-dir-1' : {$client->navigateTo("www/my-dir-1")} \n\n");
-// print_r("Create Directory (my-dir-3) : {$client->createFolder("my-dir-3")} \n\n");
+// print_r("Create Folder (my-dir-3) : {$client->createFolder("my-dir-3")} \n\n");
 // print_r("Location : {$client->location()} \n\n");
 
 
@@ -118,9 +117,9 @@ print_r("Location : {$client->location()} \n\n");
 // print_r("Delete (/www/my-dir-1/my-dir-3) : ". ($client->delete("/www/my-dir-1/my-dir-3") ? "yes" : "no") ."\n\n");
 // print_r("Delete (./../my-dir-3) : ". ($client->delete("./../my-dir-3") ? "yes" : "no") ."\n\n");
 
-// print_r("Create Directory (my-dir-3) : {$client->createFolder("my-dir-3/a")} \n\n");
-// print_r("Create Directory (my-dir-3) : {$client->createFolder("my-dir-3/b")} \n\n");
-// print_r("Create Directory (my-dir-3) : {$client->createFolder("my-dir-3/c")} \n\n");
+// print_r("Delete (/www/my-dir-1/my-dir-2/file.jpg) : ". ($client->delete("www/my-dir-1/my-dir-2/file.jpg") ? "yes" : "no") ."\n\n");
+// print_r("Delete File (/www/my-dir-1/my-dir-2/file.jpg) : ". ($client->deleteFile("www/my-dir-1/my-dir-2/file.jpg") ? "yes" : "no") ."\n\n");
+// print_r("Delete File (/www/my-dir-1/my-dir-2) : ". ($client->deleteFile("www/my-dir-1/my-dir-2") ? "yes" : "no") ."\n\n");
 
 
 
@@ -134,27 +133,29 @@ print_r("Location : {$client->location()} \n\n");
 // ----------------------------------
 
 // print_r("Duplicate Folder (/www/my-dir-1) : ". ($client->duplicate("/www/my-dir-1", "/www/my-dir-9") ? "yes" : "no") ."\n\n");
-// print_r("Duplicate File (/www/my-dir-1/test.txt) : ". ($client->duplicate("/www/my-dir-1/test.txt", "/www/my-dir-1/azertyuio.txt") ? "yes" : "no") ."\n\n");
-// print_r("Duplicate File (/www/my-dir-1/test.txt) : ". ($client->duplicate("/www/my-dir-1/test.txt", "/www/my-dir-9/test.txt") ? "yes" : "no") ."\n\n");
+// print_r("Duplicate File (/www/my-dir-1/test.txt) : ". ($client->duplicateFile("/www/my-dir-1/test.txt", "/www/my-dir-9/test.txt") ? "yes" : "no") ."\n\n");
+// print_r("Duplicate File (/www/my-dir-1/logo.png) : ". ($client->duplicateFile("/www/my-dir-1/logo.png", "/www/my-dir-9/logo.png") ? "yes" : "no") ."\n\n");
 
 
 // Move
 // ----------------------------------
 
-// print_r("Move Folder (/www/my-dir-1) : ". ($client->move("/www/my-dir-1", "/www/my-dir-111") ? "yes" : "no") ."\n\n");
-// print_r("Move File (/www/my-dir-9/test.txt) : ". ($client->move("/www/my-dir-111/test.txt", "/www/my-dir-1/test.txt") ? "yes" : "no") ."\n\n");
+// print_r("Move Folder (/www/my-dir-1) : ". ($client->move("/www/my-dir-1", "/www/my-dir-9") ? "yes" : "no") ."\n\n");
+// print_r("Move File (/www/my-dir-9/test.txt) : ". ($client->move("/www/my-dir-9/test.txt", "/www/my-dir-1/test.txt") ? "yes" : "no") ."\n\n");
 
 
 // Upload
 // ----------------------------------
 // $client->upload( __DIR__."/data/data.json", "/www/my-dir-1/data-copy.json", false );
-// $client->upload( __DIR__."/data/dir", "/www/my-dir-1/dir-copy/" );
+// $client->upload( __DIR__."/data/dir", "/www/my-dir-1/dir-copy" );
 
 
 // Download
 // ----------------------------------
-var_dump($client->download( "/www/my-dir-1/", "/Users/arnaud/Downloads/my-dir-1/", true ));
-// $client->downloadFile( "/www/my-dir-1/dir-copy/images/unicorn.jpg", "/Users/arnaud/Downloads/UNICORN.jpg" );
+// $client->download( "/www/my-dir-1/", "/Users/arnaud/Downloads/my-dir-1/", true );
+// $client->download( "/www/my-dir-1/unicorn.jpg", "/Users/arnaud/Downloads/UNICORN.jpg" );
+$client->download( "/www/my-dir-1/dir-copy/unicorn.jpg", "/Users/arnaud/Downloads/UNICORN.jpg" );
+
 
 
 
@@ -170,19 +171,9 @@ var_dump($client->download( "/www/my-dir-1/", "/Users/arnaud/Downloads/my-dir-1/
 // print_r("Infos (type) (/www/my-dir-1/test.txt) : {$client->infos("/www/my-dir-1/test.txt", 'type')}\n\n");
 // print_r("Infos (type) (/www/my-dir-1) : {$client->infos("/www/my-dir-1", 'type')}\n\n");
 
-// print_r($client->infos("/www/test.txt"));
 // print_r("Permissions (get) (/www/test.txt) : {$client->permissions("/www/test.txt")}\n\n");
-// print_r("Permissions (set) (/www/test.txt) : {$client->permissions("/www/test.txt", 'public')}\n\n");
-// print_r("Permissions (set) (/www/test.txt) : {$client->permissions("/www/test.txt", 'private')}\n\n");
-// TODO: print_r("Permissions (set) (/www/test.txt) : {$client->permissions("/www/test.txt", 'team_only')}\n\n");
-// TODO: print_r("Permissions (set) (/www/test.txt) : {$client->permissions("/www/test.txt", 'password')}\n\n");
-// TODO: print_r("Permissions (set) (/www/test.txt) : {$client->permissions("/www/test.txt", 'shared_link')}\n\n");
+// print_r("Permissions (set) (/www/test.txt) : {$client->permissions("/www/test.txt", 0700)}\n\n");
 // print_r("Permissions (get) (/www/test.txt) : {$client->permissions("/www/test.txt")}\n\n");
-// print_r($client->infos("/www/test.txt"));
-
-
-// print_r("Type '/www/test.txt' : {$client->infos("/www/test.txt", Metadata::TYPE->value)}\n\n");
-// print_r("Type '/www/my-dir-1' : {$client->infos("/www/my-dir-1", Metadata::TYPE->value)}\n\n");
 
 
 // print_r("Id '/www/test.txt' : {$client->infos("/www/test.txt", Metadata::ID->value)}\n\n");
@@ -226,17 +217,6 @@ var_dump($client->download( "/www/my-dir-1/", "/Users/arnaud/Downloads/my-dir-1/
 
 
 
-// print_r($client->infos("/www/test.txt"));
-// print_r("\n\n");
-// print_r("Permissions (/www/test.txt) : {$client->infos("/www/test.txt", 'permissions')}\n\n");
-// print_r("Size : {$client->infos("/www/test.txt", 'size')}\n\n");
-// print_r("Nodes : {$client->infos("/www/test.txt", 'nodes')}\n\n");
-// print_r("Owner : {$client->infos("/www/test.txt", 'owner')}\n\n");
-// print_r("Group : {$client->infos("/www/test.txt", 'group')}\n\n");
-// print_r("Permissions (get) (/www/test.txt) : {$client->permissions("/www/test.txt")}\n\n");
-// print_r("Permissions (set) (/www/test.txt) : {$client->permissions("/www/test.txt", 0700)}\n\n");
-// print_r("Permissions (get) (/www/test.txt) : {$client->permissions("/www/test.txt")}\n\n");
-
 
 // print_r("Create File (/www/test.txt) : {$client->createFile("/www/test.txt")}\n\n");
 // print_r("Create File (/www/plop.txt) : {$client->createFile("/www/plop.txt")}\n\n");
@@ -271,7 +251,6 @@ var_dump($client->download( "/www/my-dir-1/", "/Users/arnaud/Downloads/my-dir-1/
 
 
 
-
 // Local directories settings
 // --
 
@@ -285,5 +264,54 @@ var_dump($client->download( "/www/my-dir-1/", "/Users/arnaud/Downloads/my-dir-1/
 
 
 
+
+
+
+
+
+// File Type
+// --
+
+// print_r("Navigate to (/www/my-dir-1/my-dir-2) : {$client->navigateTo("/www/my-dir-1/my-dir-2")} \n\n");
+// print_r("Location : {$client->location()} \n\n");
+
+// print_r("Create Directory (my-dir-3) : {$client->createFolder("my-dir-3")} \n\n");
+// print_r("Location : {$client->location()} \n\n");
+
+// print_r("Create Directory (my-dir-4) : {$client->createFolder(directory: "my-dir-4", navigateTo: false)} \n\n");
+// print_r("Location : {$client->location()} \n\n");
+
+
+
+// File Infos
+// --
+
+// $file = "/www/my-dir-1-99/test.txt";
+// print_r("Delete File ({$file}) : ". ($client->deleteFile($file) ? "yes" : "no") ."\n\n");
+// print_r($client->createFile($file, "test"));
+// print_r($client->copyFile("/www/no_media.jpg", "/www/my-dir-3/no_media.jpg"));
+// print_r($client->copy("/www/no_media.jpg", "/www/my-dir-3/no_media.jpg"));
+// print_r($client->delete("/www/my-dir-3"));
+// print_r($client->copy("/www/plop", "/www/my-dir-3/plop"));
+
+// print_r("Delete (/www/my-dir-3) : ". ($client->deleteFolder("www/my-dir-3", true) ? "yes" : "no") ."\n\n");
+
+
+
+
+// $client->createFolder("/www/my-dir-1");
+// $client->createFolder("/www/my-dir-2");
+// $client->duplicateFile("/unicorn.jpg", "/www/my-dir-1/unicorn.jpg");
+
+// print_r("move File : ". ($client->move("/www/my-dir-1/unicorn.jpg",  "/www/my-dir-2/unicorn.jpg") ? "yes" : "no") ."\n\n");
+// print_r("move directory : ". ($client->move("/www/my-dir-2",  "/www/my-dir-1/my-dir-2") ? "yes" : "no") ."\n\n");
+// print_r("Move directory : ". ($client->move("/www/my-dir-3",  "/www/my-dir-1") ? "yes" : "no") ."\n\n");
+// print_r("Rename directory : ". ($client->rename("/www/my-dir-1-a",  "/www/my-dir-1") ? "yes" : "no") ."\n\n");
+
+
+// $client->send( __DIR__."/data.json", "/www/my-dir-1/data-copy.json", false );
+// $client->send( __DIR__."/../temp", "/www/my-dir-1/" );
+// $client->get( "/www/my-dir-1/", "/Users/arnaud/Downloads/my-dir-1/", true );
+// $client->get( "/www/my-dir-1/unicorn.jpg", "/Users/arnaud/Downloads/UNICORN.jpg" );
 
 print_r("\n\n");

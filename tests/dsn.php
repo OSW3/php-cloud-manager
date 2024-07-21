@@ -4,24 +4,43 @@ use OSW3\CloudManager\Services\DsnService;
 
 require __DIR__ . "/../vendor/autoload.php";
 
-// Method 1 - Passing the DSN on instance
-// $dsnService = new DsnService("ftp://user:pass@host:21");
+if (file_exists(__DIR__."/config.php")) include __DIR__."/config.php";
 
-// Method 2 - Passing the DSN post instance
-// $dsnService = new DsnService();
-// $dsnService->setDsn("ftp://user:pass@host:21");
 
-// Method 3 - Passing the DSN post instance by Parts
-$dsnService = new DsnService();
-$dsnService->setUser("john");
-// $dsnService->setPort("433");
-$dsnService->setPass("123456");
-$dsnService->setHost("osw3.net");
-$dsnService->setDriver("ftps");
-?>
+if (!isset($dropbox_app_key)) $dropbox_app_key = "";
+if (!isset($dropbox_app_secret)) $dropbox_app_secret = "";
+if (!isset($dropbox_access_token)) $dropbox_access_token = "";
 
-<h2>DSN as Array</h2>
-<pre><?php print_r($dsnService->getDsn()) ?></pre>
 
-<h2>DSN as String</h2>
-<pre><?= $dsnService->getDsn(true) ?></pre>
+if (!isset($ftp_host)) $ftp_host = "";
+if (!isset($ftp_user)) $ftp_user = "";
+if (!isset($ftp_pass)) $ftp_pass = "";
+
+
+
+
+
+print_r("\n\n");
+print_r("-- OSW3 CLOUD MANAGER -- DSN SERVICE---------------------------------- \n\n");
+
+
+$dsn = "dropbox:basic://{$dropbox_app_key}:{$dropbox_app_secret}";
+$dsn = "dropbox:token://{$dropbox_access_token}";
+// $dsn = "ftp://{$ftp_user}:{$ftp_pass}@{$ftp_host}:21";
+// $dsn = "ftp://{$ftp_user}:{$ftp_pass}@{$ftp_host}";
+
+
+
+$dsnService = new DsnService($dsn);
+
+print_r( "DSN String : {$dsn} \n\n" );
+print_r( "Driver : \t{$dsnService->getDriver()} \n" );
+print_r( "Auth Method : \t{$dsnService->getAuth()} \n" );
+print_r( "User : \t\t{$dsnService->getUser()} \n" );
+print_r( "Pass : \t\t{$dsnService->getPass()} \n" );
+print_r( "Token : \t{$dsnService->getToken()} \n" );
+print_r( "Host : \t\t{$dsnService->getHost()} \n" );
+print_r( "Port : \t\t{$dsnService->getPort()} \n" );
+
+print_r( "\nDSN String : {$dsnService->get()} \n\n" );
+
