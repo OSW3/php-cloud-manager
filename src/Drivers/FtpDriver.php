@@ -800,6 +800,10 @@ class FtpDriver extends AbstractDriver implements DriverInterface
     {
         if ($this->isConnected())
         {
+            if (is_string($permissions)) {
+                $permissions = octdec($permissions);
+            }
+            
             return ftp_chmod($this->connection, $permissions, $filename);
         }
 
