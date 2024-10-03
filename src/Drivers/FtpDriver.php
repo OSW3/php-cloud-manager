@@ -537,43 +537,21 @@ class FtpDriver extends AbstractDriver implements DriverInterface
             // $infos = $this->parseList($metadata, $directory);
         }
 
-        foreach ($data as $metadata)
+        if ($data) foreach ($data as $metadata)
         {
             // Data Extraction
             // --
 
-            // Extract file type and permissions
-            preg_match("/^[-ld]([-|r|w|x]{3}){3}/", $metadata, $permissions);
-            $column_1 = $permissions[0];
-            $metadata    = trim(preg_replace("/$column_1/", "", $metadata));
+            $pattern = '/^([drwx-]+)\s+(\d+)\s+(\S+)\s+(\S+)\s+(\d+)\s+(\w{3}\s+\d{1,2}\s+(?:\d{2}:\d{2}|\d{4}))\s+(.+)$/';
 
-            // Extract $entry nodes / links
-            $column_2 = intval(substr($metadata, 0, 1));
-            $metadata    = trim(substr($metadata, 1));
-
-            // Extract Owner name
-            preg_match("/^\d+/", $metadata, $results);
-            $column_3 = $results[0];
-            $metadata    = trim(substr($metadata, strlen($column_3)));
-
-            // Extract Group name
-            preg_match("/^\d+/", $metadata, $results);
-            $column_4 = $results[0];
-            $metadata    = trim(substr($metadata, strlen($column_4)));
-
-            // Extract Filesize
-            preg_match("/^\d+/", $metadata, $results);
-            $column_5 = intval($results[0]);
-            $metadata    = trim(substr($metadata, strlen($column_5)));
-
-            // Extract Date
-            preg_match("/^(Jan|Feb|Mar|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2}\s+(\d{4}|\d{2}:\d{2})/", $metadata, $results);
-            $column_6 = $results[0];
-            $metadata    = trim(substr($metadata, strlen($column_6)));
-
-            // Extract Filename
-            $column_7 = $metadata;
-
+            preg_match($pattern, $metadata, $matches);
+            $column_1 = $matches[1]; // Extract file type and permissions
+            $column_2 = $matches[2]; // Extract $entry nodes / links
+            $column_3 = $matches[3]; // Extract Owner name
+            $column_4 = $matches[4]; // Extract Group name
+            $column_5 = $matches[5]; // Extract Filesize
+            $column_6 = $matches[6]; // Extract Date
+            $column_7 = $matches[7]; // Extract Filename
 
             // Parse Data
             // --

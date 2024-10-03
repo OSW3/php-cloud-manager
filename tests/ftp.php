@@ -106,7 +106,7 @@ print_r("Location : {$client->location()} \n\n");
 // Create Folder
 // ----------------------------------
 
-// print_r("Navigate to '/www/my-dir-1' : {$client->navigateTo("www/my-dir-1")} \n\n");
+print_r("Navigate to '/ftp' : {$client->navigateTo("ftp")} \n\n");
 // print_r("Create Folder (my-dir-3) : {$client->createFolder("my-dir-3")} \n\n");
 // print_r("Location : {$client->location()} \n\n");
 
@@ -146,8 +146,8 @@ print_r("Location : {$client->location()} \n\n");
 
 // Upload
 // ----------------------------------
-// $client->upload( __DIR__."/data/data.json", "/www/my-dir-1/data-copy.json", false );
-// $client->upload( __DIR__."/data/dir", "/www/my-dir-1/dir-copy" );
+$client->upload( __DIR__."/data/data.json", "my-dir-1/data-copy.json", false );
+$client->upload( __DIR__."/data/dir", "my-dir-1/dir-copy" );
 
 
 // Download
