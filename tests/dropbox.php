@@ -7,6 +7,8 @@ require __DIR__ . "/../vendor/autoload.php";
 
 if (file_exists(__DIR__."/config.php")) include __DIR__."/config.php";
 
+// 1 create Dropbox App 
+// -> https://www.dropbox.com/developers/apps?_tk=pilot_lp&_ad=topbar4&_camp=myapps
 
 if (!isset($dropbox_app_key)) $dropbox_app_key = "";
 if (!isset($dropbox_app_secret)) $dropbox_app_secret = "";
@@ -98,7 +100,7 @@ print_r("Location : {$client->location()} \n\n");
 // Browse Folder
 // ----------------------------------
 
-// print_r("Navigate to www : {$client->navigateTo("www")} \n\n");
+print_r("Navigate to www : {$client->navigateTo("www")} \n\n");
 // print_r("Location : {$client->location()} \n\n");
 // print_r($client->browse());
 
@@ -147,15 +149,19 @@ print_r("Location : {$client->location()} \n\n");
 
 // Upload
 // ----------------------------------
-// $client->upload( __DIR__."/data/data.json", "/www/my-dir-1/data-copy.json", false );
+$client->upload( __DIR__."/data/data.json", "/www/my-dir-1/data-copy-2.json", false );
 // $client->upload( __DIR__."/data/dir", "/www/my-dir-1/dir-copy/" );
 
 
 // Download
 // ----------------------------------
-var_dump($client->download( "/www/my-dir-1/", "/Users/arnaud/Downloads/my-dir-1/", true ));
+// var_dump($client->download( "/www/my-dir-1/", "/Users/arnaud/Downloads/my-dir-1/", true ));
 // $client->downloadFile( "/www/my-dir-1/dir-copy/images/unicorn.jpg", "/Users/arnaud/Downloads/UNICORN.jpg" );
 
+
+// Get Link
+// ----------------------------------
+print_r("Link File (/www/my-dir-1/data-copy-2.txt) : ". $client->link("/www/my-dir-1/data-copy-2.json" ) ."\n\n");
 
 
 

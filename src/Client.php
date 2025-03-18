@@ -237,6 +237,10 @@ class Client implements ClientInterface
     {
         return $this->driver->download($source, $destination, $override);
     }
+    public function link(string $path): ?string
+    {
+        return $this->driver->link($path);
+    }
 
 
 

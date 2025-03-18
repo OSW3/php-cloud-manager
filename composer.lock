@@ -1,0 +1,60 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
+        "This file is @generated automatically"
+    ],
+    "content-hash": "074387f92aa1f6869d73293ca77d0efb",
+    "packages": [
+        {
+            "name": "osw3/php-url-manager",
+            "version": "0.0.3",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/OSW3/php-url-manager.git",
+                "reference": "b63168d0edbaf33bebdad42f97ed9804c1ac9f62"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/OSW3/php-url-manager/zipball/b63168d0edbaf33bebdad42f97ed9804c1ac9f62",
+                "reference": "b63168d0edbaf33bebdad42f97ed9804c1ac9f62",
+                "shasum": ""
+            },
+            "replace": {
+                "original/library": "*"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "OSW3\\UrlManager\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Project Contributors",
+                    "homepage": "https://github.com/osw3/php-url-manager/graphs/contributors"
+                }
+            ],
+            "description": "Provides an URL tools",
+            "homepage": "https://osw3.net",
+            "support": {
+                "issues": "https://github.com/OSW3/php-url-manager/issues",
+                "source": "https://github.com/OSW3/php-url-manager/tree/0.0.3"
+            },
+            "time": "2024-07-14T12:39:57+00:00"
+        }
+    ],
+    "packages-dev": [],
+    "aliases": [],
+    "minimum-stability": "dev",
+    "stability-flags": {},
+    "prefer-stable": true,
+    "prefer-lowest": false,
+    "platform": {},
+    "platform-dev": {},
+    "plugin-api-version": "2.6.0"
+}

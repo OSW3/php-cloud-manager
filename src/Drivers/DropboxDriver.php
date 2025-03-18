@@ -372,6 +372,7 @@ class DropboxDriver extends AbstractDriver implements DriverInterface
         return file_put_contents($destination, $content);
     }
 
+
     // Folder & File both
     // --
 
@@ -448,6 +449,24 @@ class DropboxDriver extends AbstractDriver implements DriverInterface
             MetadataType::FILE->value => $this->downloadFile($source, $destination, $override),
             default => false
         };
+    }
+
+
+
+    public function link(string $path, bool $direct=true): ?string
+    {
+        if (!$this->isConnected()) {
+            return false;
+        }
+        
+        $info = $this->dbxGetSharedInfo($path) ?? $this->dbxCreateSharedLink($path, 'public');
+        $url = $info->url ?? null;
+
+        if ($url && $direct) {
+            $url = str_replace("&dl=0", "&raw=1", $url);
+        }
+
+        return $url;
     }
 
 
@@ -648,7 +667,10 @@ class DropboxDriver extends AbstractDriver implements DriverInterface
 
         $data = [
             "path"     => $this->resolvePath($path),
-            "settings" => ["requested_visibility" => $visibility]
+            "settings" => [
+                "allow_download"       => true,
+                "requested_visibility" => $visibility
+            ]
         ];
         
         $response = $this->fetchPost(
@@ -657,7 +679,7 @@ class DropboxDriver extends AbstractDriver implements DriverInterface
             $this->requestHeaders()
         );
 
-        return !isset($response->error);
+        return $response;
     }
     private function dbxRevokeSharedLink(string $path): bool
     {
